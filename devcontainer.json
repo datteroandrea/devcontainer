@@ -1,0 +1,46 @@
+{
+  "name": "Polyglot Dev Environment",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
+  "overrideCommand": false,
+  "shutdownAction": "stopCompose",
+
+  "forwardPorts": [3000, 3001, 5173, 8000, 8080, 5432, 6379],
+  "portsAttributes": {
+    "3000": { "label": "Next.js" },
+    "5432": { "label": "PostgreSQL" },
+    "6379": { "label": "Redis" }
+  },
+
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql://vscode:vscode@localhost:5432/devdb",
+    "REDIS_URL": "redis://localhost:6379"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "ms-vscode.cpptools-extension-pack",
+        "vscjava.vscode-java-pack",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ckolkman.vscode-postgres",
+        "cweijan.vscode-redis-client",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/usr/bin/python3"
+      }
+    }
+  }
+}

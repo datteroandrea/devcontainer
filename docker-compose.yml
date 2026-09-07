@@ -1,0 +1,36 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Match these to your host user so bind-mounted files stay writable.
+        # On Linux run: id -u  /  id -g
+        USER_UID: "1000"
+        USER_GID: "1000"
+    container_name: dev-env
+    init: true
+    volumes:
+      # Your code
+      - .:/workspace:cached
+      # Persist database + cache data across container rebuilds
+      - pgdata:/var/lib/postgresql
+      - redisdata:/var/lib/redis
+      # Persist package caches so rebuilds are fast
+      - cargo-registry:/usr/local/cargo/registry
+      - npm-cache:/home/vscode/.npm
+    ports:
+      - "3000:3000"   # Next.js / React dev server
+      - "3001:3001"
+      - "5173:5173"   # Vite
+      - "8000:8000"   # Python (FastAPI/Django)
+      - "8080:8080"   # Java (Spring Boot)
+      - "5432:5432"   # PostgreSQL
+      - "6379:6379"   # Redis
+    command: sleep infinity
+
+volumes:
+  pgdata:
+  redisdata:
+  cargo-registry:
+  npm-cache:
