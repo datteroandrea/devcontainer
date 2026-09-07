@@ -9,7 +9,7 @@ FROM ubuntu:24.04
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=1000
-ARG NODE_MAJOR=22
+ARG NODE_VERSION=24.13.0
 ARG GRADLE_VERSION=8.14.3
 # Latest stable Supabase CLI at time of writing. Leave empty to install latest.
 ARG SUPABASE_VERSION=2.116.0
@@ -55,12 +55,21 @@ RUN wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-
 # ---------------------------------------------------------------------------
 # 2. Node.js (+ npm, pnpm, yarn via corepack) — this is what runs React/Next.js
 # ---------------------------------------------------------------------------
-RUN curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
- && apt-get install -y --no-install-recommends nodejs \
- && rm -rf /var/lib/apt/lists/* \
- && corepack enable \
- && npm install -g npm@latest typescript ts-node \
- && npm cache clean --force
+RUN set -eux; \
+    case "$(dpkg --print-architecture)" in \
+      amd64) NODE_ARCH=x64 ;; \
+      arm64) NODE_ARCH=arm64 ;; \
+      *) echo "unsupported arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" \
+      -o /tmp/node.tar.xz; \
+    tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 --no-same-owner \
+      --exclude=CHANGELOG.md --exclude=LICENSE --exclude=README.md; \
+    rm /tmp/node.tar.xz; \
+    corepack enable; \
+    npm install -g typescript ts-node; \
+    npm cache clean --force; \
+    node --version; npm --version
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # ---------------------------------------------------------------------------
