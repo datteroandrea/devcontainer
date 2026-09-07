@@ -13,19 +13,25 @@ services:
     volumes:
       # Your code
       - .:/workspace:cached
+      # Host Docker daemon — required for `supabase start`
+      - /var/run/docker.sock:/var/run/docker.sock
       # Persist database + cache data across container rebuilds
       - pgdata:/var/lib/postgresql
       - redisdata:/var/lib/redis
       # Persist package caches so rebuilds are fast
       - cargo-registry:/usr/local/cargo/registry
       - npm-cache:/home/vscode/.npm
+      - supabase-cli:/home/vscode/.supabase
+    extra_hosts:
+      # Lets the container reach ports the Supabase stack publishes on the host
+      - "host.docker.internal:host-gateway"
     ports:
       - "3000:3000"   # Next.js / React dev server
       - "3001:3001"
       - "5173:5173"   # Vite
       - "8000:8000"   # Python (FastAPI/Django)
       - "8080:8080"   # Java (Spring Boot)
-      - "5432:5432"   # PostgreSQL
+      - "5432:5432"   # PostgreSQL (the one inside this container)
       - "6379:6379"   # Redis
     command: sleep infinity
 
@@ -34,3 +40,4 @@ volumes:
   redisdata:
   cargo-registry:
   npm-cache:
+  supabase-cli:

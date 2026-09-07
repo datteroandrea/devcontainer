@@ -27,6 +27,27 @@ if ! redis-cli ping >/dev/null 2>&1; then
   redis-server /etc/redis/redis.conf --daemonize yes
 fi
 
+# --- Docker socket ----------------------------------------------------------
+# The socket's group ID comes from the host and varies per machine, so grant
+# the dev user access to whatever group actually owns it.
+DEV_USER="${DEV_USER:-vscode}"
+if [ -S /var/run/docker.sock ]; then
+  SOCK_GID="$(stat -c '%g' /var/run/docker.sock)"
+  if [ "$SOCK_GID" = "0" ]; then
+    # Docker Desktop mounts a root-owned socket; sudo covers this case.
+    chmod 666 /var/run/docker.sock || true
+  else
+    if ! getent group "$SOCK_GID" >/dev/null; then
+      groupadd --gid "$SOCK_GID" docker-host
+    fi
+    SOCK_GROUP="$(getent group "$SOCK_GID" | cut -d: -f1)"
+    usermod -aG "$SOCK_GROUP" "$DEV_USER"
+  fi
+  echo "[entrypoint] Docker socket ready (gid ${SOCK_GID})"
+else
+  echo "[entrypoint] WARNING: /var/run/docker.sock not mounted — 'supabase start' will fail."
+fi
+
 echo "[entrypoint] Postgres: $(pg_isready 2>&1 || true)"
 echo "[entrypoint] Redis:    $(redis-cli ping 2>&1 || true)"
 

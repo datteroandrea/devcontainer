@@ -11,6 +11,8 @@ ARG USER_UID=1000
 ARG USER_GID=1000
 ARG NODE_MAJOR=22
 ARG GRADLE_VERSION=8.14.3
+# Latest stable Supabase CLI at time of writing. Leave empty to install latest.
+ARG SUPABASE_VERSION=2.116.0
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC \
@@ -67,11 +69,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-      | sh -s -- -y --no-modify-path --profile minimal \
-        --default-toolchain stable \
-        --component rustfmt clippy rust-analyzer rust-src \
- && chmod -R a+rw "$RUSTUP_HOME" "$CARGO_HOME"
+RUN set -eux; \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh; \
+    sh /tmp/rustup-init.sh -y --no-modify-path --profile minimal --default-toolchain stable; \
+    rm /tmp/rustup-init.sh; \
+    rustup component add rustfmt clippy rust-analyzer rust-src; \
+    rustc --version; cargo --version; \
+    chmod -R a+rw "$RUSTUP_HOME" "$CARGO_HOME"
 
 # ---------------------------------------------------------------------------
 # 4. Python extras (Ubuntu 24.04 marks the system Python as externally managed,
@@ -81,7 +85,51 @@ RUN pip3 install --no-cache-dir --break-system-packages \
       uv virtualenv pipenv ruff black ipython
 
 # ---------------------------------------------------------------------------
-# 5. Non-root user (VS Code connects as this user)
+# 5. Docker CLI (no daemon) — `supabase start` launches containers, so the
+#    dev container talks to the HOST daemon via the mounted socket.
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    install -m 0755 -d /etc/apt/keyrings; \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc; \
+    chmod a+r /etc/apt/keyrings/docker.asc; \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+      > /etc/apt/sources.list.d/docker.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      docker-ce-cli docker-buildx-plugin docker-compose-plugin; \
+    rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# 6. Supabase CLI
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    curl -fsSL https://raw.githubusercontent.com/supabase/cli/main/install -o /tmp/supabase-install.sh; \
+    if [ -n "${SUPABASE_VERSION}" ]; then \
+      SUPABASE_INSTALL_DIR=/usr/local/bin bash /tmp/supabase-install.sh \
+        --version "${SUPABASE_VERSION}" --no-modify-path; \
+    else \
+      SUPABASE_INSTALL_DIR=/usr/local/bin bash /tmp/supabase-install.sh --no-modify-path; \
+    fi; \
+    rm /tmp/supabase-install.sh; \
+    supabase --version
+
+# Deno — the runtime behind Supabase Edge Functions (gives you local
+# type-checking and LSP; the CLI still runs functions in its own container)
+RUN set -eux; \
+    case "$(dpkg --print-architecture)" in \
+      amd64) DENO_TARGET=x86_64-unknown-linux-gnu ;; \
+      arm64) DENO_TARGET=aarch64-unknown-linux-gnu ;; \
+      *) echo "unsupported arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/denoland/deno/releases/latest/download/deno-${DENO_TARGET}.zip" -o /tmp/deno.zip; \
+    unzip -q /tmp/deno.zip -d /usr/local/bin; \
+    rm /tmp/deno.zip; \
+    chmod +x /usr/local/bin/deno; \
+    deno --version
+
+# ---------------------------------------------------------------------------
+# 7. Non-root user (VS Code connects as this user)
 # ---------------------------------------------------------------------------
 RUN userdel -r ubuntu 2>/dev/null || true; \
     groupadd --gid "$USER_GID" "$USERNAME" 2>/dev/null || true; \
@@ -90,7 +138,7 @@ RUN userdel -r ubuntu 2>/dev/null || true; \
     chmod 0440 "/etc/sudoers.d/$USERNAME"
 
 # ---------------------------------------------------------------------------
-# 6. PostgreSQL config + a role/database matching the dev user
+# 8. PostgreSQL config + a role/database matching the dev user
 #    NOTE: trust auth and listening on all interfaces is fine for a local dev
 #    container. Do not reuse this configuration anywhere reachable.
 # ---------------------------------------------------------------------------
@@ -107,7 +155,7 @@ RUN set -eux; \
     pg_ctlcluster "$PG_VERSION" main stop
 
 # ---------------------------------------------------------------------------
-# 7. Redis config (bind on all interfaces inside the container)
+# 9. Redis config (bind on all interfaces inside the container)
 # ---------------------------------------------------------------------------
 RUN sed -i \
       -e 's/^bind .*/bind 0.0.0.0 -::1/' \
@@ -116,8 +164,9 @@ RUN sed -i \
       /etc/redis/redis.conf
 
 # ---------------------------------------------------------------------------
-# 8. Workspace + entrypoint that boots Postgres and Redis
+# 10. Workspace + entrypoint that boots Postgres and Redis
 # ---------------------------------------------------------------------------
+ENV DEV_USER=$USERNAME
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
@@ -127,8 +176,13 @@ WORKDIR /workspace
 # Git is happier with bind-mounted repos owned by a different host UID
 RUN git config --system --add safe.directory '*'
 
+# The Supabase stack runs on the HOST daemon, so reach it through the gateway
+# rather than localhost. Run `supabase status` to get the anon/service keys.
 ENV DATABASE_URL="postgresql://vscode:vscode@localhost:5432/devdb" \
-    REDIS_URL="redis://localhost:6379"
+    REDIS_URL="redis://localhost:6379" \
+    SUPABASE_URL="http://host.docker.internal:54321" \
+    SUPABASE_DB_URL="postgresql://postgres:postgres@host.docker.internal:54322/postgres" \
+    SUPABASE_STUDIO_URL="http://host.docker.internal:54323"
 
 EXPOSE 3000 3001 5173 8000 8080 5432 6379
 

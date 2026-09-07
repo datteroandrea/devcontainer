@@ -16,7 +16,9 @@
 
   "remoteEnv": {
     "DATABASE_URL": "postgresql://vscode:vscode@localhost:5432/devdb",
-    "REDIS_URL": "redis://localhost:6379"
+    "REDIS_URL": "redis://localhost:6379",
+    "SUPABASE_URL": "http://host.docker.internal:54321",
+    "SUPABASE_DB_URL": "postgresql://postgres:postgres@host.docker.internal:54322/postgres"
   },
 
   "customizations": {
@@ -32,6 +34,8 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
+        "denoland.vscode-deno",
+        "Supabase.vscode-supabase-extension",
         "ckolkman.vscode-postgres",
         "cweijan.vscode-redis-client",
         "eamodio.gitlens",
