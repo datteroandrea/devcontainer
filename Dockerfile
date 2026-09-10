@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 FROM ubuntu:24.04
 
-ARG USERNAME=vscode
+ARG USERNAME=devdre
 ARG USER_UID=1000
 ARG USER_GID=1000
 ARG NODE_VERSION=24.13.0
@@ -187,7 +187,7 @@ RUN git config --system --add safe.directory '*'
 
 # The Supabase stack runs on the HOST daemon, so reach it through the gateway
 # rather than localhost. Run `supabase status` to get the anon/service keys.
-ENV DATABASE_URL="postgresql://vscode:vscode@localhost:5432/devdb" \
+ENV DATABASE_URL="postgresql://devdre:devdre@localhost:5432/devdb" \
     REDIS_URL="redis://localhost:6379" \
     SUPABASE_URL="http://host.docker.internal:54321" \
     SUPABASE_DB_URL="postgresql://postgres:postgres@host.docker.internal:54322/postgres" \

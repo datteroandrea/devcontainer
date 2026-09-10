@@ -30,7 +30,7 @@ fi
 # --- Docker socket ----------------------------------------------------------
 # The socket's group ID comes from the host and varies per machine, so grant
 # the dev user access to whatever group actually owns it.
-DEV_USER="${DEV_USER:-vscode}"
+DEV_USER="${DEV_USER:-devdre}"
 if [ -S /var/run/docker.sock ]; then
   SOCK_GID="$(stat -c '%g' /var/run/docker.sock)"
   if [ "$SOCK_GID" = "0" ]; then

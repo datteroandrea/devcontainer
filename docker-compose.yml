@@ -20,8 +20,8 @@ services:
       - redisdata:/var/lib/redis
       # Persist package caches so rebuilds are fast
       - cargo-registry:/usr/local/cargo/registry
-      - npm-cache:/home/vscode/.npm
-      - supabase-cli:/home/vscode/.supabase
+      - npm-cache:/home/devdre/.npm
+      - supabase-cli:/home/devdre/.supabase
     extra_hosts:
       # Lets the container reach ports the Supabase stack publishes on the host
       - "host.docker.internal:host-gateway"

@@ -3,7 +3,7 @@
   "dockerComposeFile": "../docker-compose.yml",
   "service": "dev",
   "workspaceFolder": "/workspace",
-  "remoteUser": "vscode",
+  "remoteUser": "devdre",
   "overrideCommand": false,
   "shutdownAction": "stopCompose",
 
@@ -15,31 +15,31 @@
   },
 
   "remoteEnv": {
-    "DATABASE_URL": "postgresql://vscode:vscode@localhost:5432/devdb",
+    "DATABASE_URL": "postgresql://devdre:devdre@localhost:5432/devdb",
     "REDIS_URL": "redis://localhost:6379",
     "SUPABASE_URL": "http://host.docker.internal:54321",
     "SUPABASE_DB_URL": "postgresql://postgres:postgres@host.docker.internal:54322/postgres"
   },
 
   "customizations": {
-    "vscode": {
+    "devdre": {
       "extensions": [
         "ms-python.python",
-        "ms-python.vscode-pylance",
+        "ms-python.devdre-pylance",
         "charliermarsh.ruff",
         "rust-lang.rust-analyzer",
         "tamasfe.even-better-toml",
-        "ms-vscode.cpptools-extension-pack",
-        "vscjava.vscode-java-pack",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "bradlc.vscode-tailwindcss",
-        "denoland.vscode-deno",
-        "Supabase.vscode-supabase-extension",
-        "ckolkman.vscode-postgres",
-        "cweijan.vscode-redis-client",
+        "ms-devdre.cpptools-extension-pack",
+        "vscjava.devdre-java-pack",
+        "dbaeumer.devdre-eslint",
+        "esbenp.prettier-devdre",
+        "bradlc.devdre-tailwindcss",
+        "denoland.devdre-deno",
+        "Supabase.devdre-supabase-extension",
+        "ckolkman.devdre-postgres",
+        "cweijan.devdre-redis-client",
         "eamodio.gitlens",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.devdre-docker"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
