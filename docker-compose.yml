@@ -10,6 +10,10 @@ services:
         USER_GID: "1000"
     container_name: dev-env
     init: true
+    # Bring the container back up whenever the Docker engine starts.
+    # Pairs with "shutdownAction": "none" in devcontainer.json — otherwise VS Code
+    # stops the container on exit and "unless-stopped" leaves it stopped.
+    restart: unless-stopped
     volumes:
       # Your code
       - .:/workspace:cached

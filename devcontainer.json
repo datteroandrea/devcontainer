@@ -5,7 +5,7 @@
   "workspaceFolder": "/workspace",
   "remoteUser": "devdre",
   "overrideCommand": false,
-  "shutdownAction": "stopCompose",
+  "shutdownAction": "none",
 
   "forwardPorts": [3000, 3001, 5173, 8000, 8080, 5432, 6379],
   "portsAttributes": {
